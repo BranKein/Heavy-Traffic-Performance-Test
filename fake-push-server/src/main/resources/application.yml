@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: fake-push-server
+
+server:
+  port: 8090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health
+  metrics:
+    tags:
+      application: "fake-push-server"

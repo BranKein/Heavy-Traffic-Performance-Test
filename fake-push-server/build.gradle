@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.graalvm.buildtools.native' version '0.10.3'
+}
+
+group = 'me.yeonhyuk'
+version = '0.0.1-SNAPSHOT'
+
+bootBuildImage {
+    imageName = "fake-push-server:latest"
+    builder = "dashaun/builder:tiny"
+    createdDate = "now"
+    environment = [
+            "BP_NATIVE_IMAGE": "true",
+    ]
+}
+
+graalvmNative {
+    metadataRepository {
+        version = '0.3.14'
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
