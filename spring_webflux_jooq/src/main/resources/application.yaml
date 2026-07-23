@@ -1,3 +1,6 @@
 spring:
   application:
     name: spring_webflux_jooq
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

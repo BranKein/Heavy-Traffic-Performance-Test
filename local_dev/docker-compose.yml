@@ -21,7 +21,7 @@ services:
     container_name: fake-push-server
     pull_policy: always
     ports:
-      - "8090:8090"
+      - "9000:8090"
 
 volumes:
   postgres-data:
