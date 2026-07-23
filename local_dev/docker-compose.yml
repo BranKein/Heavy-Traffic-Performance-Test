@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chat-postgres
+    environment:
+      POSTGRES_DB: chat_server
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat -d chat_server"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  fake-push-server:
+    image: yeonhyukkim/fake-push-server:latest
+    container_name: fake-push-server
+    pull_policy: always
+    ports:
+      - "8090:8090"
+
+volumes:
+  postgres-data:

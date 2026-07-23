@@ -1,3 +1,0 @@
-spring:
-  application:
-    name: heavy_traffic_webflux_jooq
