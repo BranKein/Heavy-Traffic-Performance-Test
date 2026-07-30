@@ -1,10 +1,9 @@
 spring:
   application:
     name: spring_webflux_jooq
-  # Flyway 폐기: 스키마는 perf 시드(seed/schema.sql)가 앱 기동 전에 생성한다.
-  # 여러 앱이 같은 DB 에 동시 마이그레이션하다 오염되는 문제를 피하기 위함.
-  flyway:
-    enabled: false
+  # 스키마는 perf 시드(seed/schema.sql)가 앱 기동 전에 생성한다.
+  # 여러 앱이 같은 DB 에 동시 마이그레이션하다 오염되는 문제를 피하려 마이그레이션 툴은 두지 않는다.
+  # (jOOQ 타입 생성은 라이브 DB 가 아니라 db/migration 의 DDL 스크립트로부터 빌드 타임에 한다.)
 
 # JWT 검증 설정 (SR §4). 공개키는 프로퍼티로 외부 주입한다.
 # public-key: RSA-2048 공개키를 Base64(DER, X.509 SubjectPublicKeyInfo)로 인코딩한 값.

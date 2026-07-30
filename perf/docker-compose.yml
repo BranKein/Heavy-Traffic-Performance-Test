@@ -139,9 +139,6 @@ services:
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/chat_server
       SPRING_R2DBC_USERNAME: chat
       SPRING_R2DBC_PASSWORD: chat1234
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chat_server
-      SPRING_DATASOURCE_USERNAME: chat
-      SPRING_DATASOURCE_PASSWORD: chat1234
       # 주의: webflux 의 PushProperties 는 필드명이 baseUrl(=push.base-url) 이라 다른 서버들과
       # 같은 PUSH_SERVERURL 로는 바인딩되지 않는다(MVC 계열은 serverUrl=push.server-url 이라 맞음).
       # 잘못 두면 baseUrl 이 null 이 되어 WebClient 가 localhost:80 으로 나가 즉시 Connection
@@ -156,7 +153,7 @@ services:
           cpus: "1.0"
           memory: 2g
 
-  # Go Chatting Push Server (Gin + pgx). 스키마는 공유 postgres(다른 SUT 의 Flyway/드리즐)에서 생성됨.
+  # Go Chatting Push Server (Gin + pgx). 스키마는 공유 postgres(perf 시드가 소유)에서 생성됨.
   chat-go:
     image: chat-go:local
     build:
