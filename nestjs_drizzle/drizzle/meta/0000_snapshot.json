@@ -1,0 +1,252 @@
+{
+  "id": "5a8fb2c1-206a-4802-bddd-0a8f464130f1",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.api_log": {
+      "name": "api_log",
+      "schema": "",
+      "columns": {
+        "pk": {
+          "name": "pk",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "http_method": {
+          "name": "http_method",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uri": {
+          "name": "uri",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_time": {
+          "name": "request_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_body": {
+          "name": "request_body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.chat": {
+      "name": "chat",
+      "schema": "",
+      "columns": {
+        "pk": {
+          "name": "pk",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "chat_room_fk": {
+          "name": "chat_room_fk",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_fk": {
+          "name": "user_fk",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chat_data": {
+          "name": "chat_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "create_date": {
+          "name": "create_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.chat_room": {
+      "name": "chat_room",
+      "schema": "",
+      "columns": {
+        "pk": {
+          "name": "pk",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "create_date": {
+          "name": "create_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.device": {
+      "name": "device",
+      "schema": "",
+      "columns": {
+        "pk": {
+          "name": "pk",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_fk": {
+          "name": "user_fk",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_id": {
+          "name": "device_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_chat_room": {
+      "name": "user_chat_room",
+      "schema": "",
+      "columns": {
+        "user_fk": {
+          "name": "user_fk",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chat_room_fk": {
+          "name": "chat_room_fk",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_chat_room_user_fk_users_pk_fk": {
+          "name": "user_chat_room_user_fk_users_pk_fk",
+          "tableFrom": "user_chat_room",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_fk"
+          ],
+          "columnsTo": [
+            "pk"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_chat_room_chat_room_fk_chat_room_pk_fk": {
+          "name": "user_chat_room_chat_room_fk_chat_room_pk_fk",
+          "tableFrom": "user_chat_room",
+          "tableTo": "chat_room",
+          "columnsFrom": [
+            "chat_room_fk"
+          ],
+          "columnsTo": [
+            "pk"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_chat_room_user_fk_chat_room_fk_pk": {
+          "name": "user_chat_room_user_fk_chat_room_fk_pk",
+          "columns": [
+            "user_fk",
+            "chat_room_fk"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "pk": {
+          "name": "pk",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

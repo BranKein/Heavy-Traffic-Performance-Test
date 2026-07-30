@@ -1,0 +1,21 @@
+# sqlc 설정 (선택). 이 폴더는 "손으로 짠 pgx 대신 타입 안전 코드를 생성하고 싶을 때"의
+# 대안 경로다. 사용법은 README 의 "sqlc 로 전환하기" 참고.
+#
+#   sqlc generate   # sqlc/ 에서 실행 → ../internal/db 에 타입 안전 코드 생성
+#
+# 생성 후에는 repository 계층을 db.New(pool) 기반으로 교체하면 된다.
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "schema.sql"
+    queries: "query.sql"
+    gen:
+      go:
+        package: "db"
+        out: "../internal/db"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        overrides:
+          # uuid 컬럼을 google/uuid.UUID 로 매핑
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
