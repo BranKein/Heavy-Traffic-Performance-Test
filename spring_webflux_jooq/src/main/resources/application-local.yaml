@@ -10,3 +10,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/chat_server
     user: chat
     password: chat1234
+
+# Fake Push Server (SR §7) — 로컬 docker-compose 는 host 9000 → container 8090 로 포워딩
+push:
+  base-url: http://localhost:9000
+  max-concurrency: 256

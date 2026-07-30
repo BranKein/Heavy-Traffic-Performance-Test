@@ -51,7 +51,7 @@
 - JWT 토큰의 payload에는 다음 정보가 담긴다:
   - `iss`: `PUSH_BROADCASTING` (동일 문자열인지 확인 필요)
   - `userPk`: 사용자의 PK
-- **JWT 검증용 키는 RSA 키쌍으로 한다 (키 길이 1024).**
+- **JWT 검증용 키는 RSA 키쌍으로 한다 (키 길이 2048).**
   - 개발 시에는 임의로 생성한 키쌍으로 테스트해도 되지만, **테스트 시에는 외부에서 키쌍 주입이 가능해야 한다.**
   - 따라서 **RSA Public Key는 properties 파일로 주입**받도록 한다.
 - **JWT 알고리즘: RS256.**
@@ -302,7 +302,7 @@ docker pull yeonhyukkim/fake-push-server:latest
 | 범위              | 단일 인스턴스, 애플리케이션 내부 성능 개선만; 스케일아웃 없음 |
 | 외부 의존성       | 새로운 외부 컴포넌트 추가 불가 (Redis 등) |
 | DB                | PostgreSQL, 테이블 고정, index hint 불가, 항상 Transaction 사용 |
-| 인증              | JWT, RS256, RSA-1024, properties로 public key 주입, `iss=PUSH_BROADCASTING`, `userPk` |
+| 인증              | JWT, RS256, RSA-2048, properties로 public key 주입, `iss=PUSH_BROADCASTING`, `userPk` |
 | 응답              | 항상 HTTP 200; 에러는 `resultCode`로; 성공 = `100`; 제네릭 `resultData`; `ResultCodeEnum` |
 | 로깅              | request만, DB + 파일, 실패해도 요청 진행; `server.log` + `error.log` |
 | 부팅 시간         | 5초 이하 |

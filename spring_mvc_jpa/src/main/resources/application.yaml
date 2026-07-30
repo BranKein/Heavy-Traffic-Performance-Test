@@ -5,6 +5,12 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  # Flyway 폐기: 스키마는 perf 시드(seed/schema.sql)가 앱 기동 전에 생성한다.
+  # 여러 앱이 같은 DB 에 동시 마이그레이션하다 오염되는 문제를 피하기 위함.
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
+
+# RSA Public Key (Base64 X.509, RSA 2048). RS256 JWT 검증용 (SR §4).
+# 배포/테스트 환경에서는 이 property 를 override 하여 외부 키를 주입한다.
+jwt:
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1YrfAYl6cHNE9vYfTt5Oi8VHb0SdKaPbSiJjILZhSroG5qQLDBaIPrxDi+T8vexrbftg5mEx0IaIKJo/tJb+IBFfUT24BIaCdjcjhqJS6ZlPhIigFSqS4YlyWeTI4aMyAnCkbNO/lMvf7TTRbPHPvQfCyTEZbSxYFqqJWXBWiY7AIThNPUYAtF2SruZ6feTAnXJ1BAFxZcQ+jfk58PTKUPjrjgIIhd/slSmtgDzy4sxPJbyNgPErWEdqNtOzGPQlJx9ksuDALckoFuos23ij5eJUyIERIwXj59tdTOMz6snGTk+DhvcD8dLiquNWKq6PHKhRdNPVWxNBBygYICq/wIDAQAB

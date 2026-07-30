@@ -51,7 +51,7 @@ For each incoming chat request:
 - The JWT payload contains:
   - `iss`: `PUSH_BROADCASTING` (must be validated as an exact string match)
   - `userPk`: the user's PK
-- **JWT signing keys must be an RSA key pair (key length 1024).**
+- **JWT signing keys must be an RSA key pair (key length 2048).**
   - During development, an arbitrary self-generated key pair is fine, but **during testing the key pair must be injectable from outside**.
   - Therefore, load the **RSA public key from a properties file** (external injection).
 - **JWT algorithm: RS256.**
@@ -302,7 +302,7 @@ Every incoming request must be logged.
 | Scope             | Single-instance, in-app performance only; no scale-out |
 | External deps     | No new external components (no Redis, etc.) |
 | DB                | PostgreSQL, fixed tables, no index hints, always use transactions |
-| Auth              | JWT, RS256, RSA-1024, public key from properties, `iss=PUSH_BROADCASTING`, `userPk` |
+| Auth              | JWT, RS256, RSA-2048, public key from properties, `iss=PUSH_BROADCASTING`, `userPk` |
 | Response          | HTTP 200 always; `resultCode` for errors; success = `100`; generic `resultData`; `ResultCodeEnum` |
 | Logging           | Request-only, to DB + file, non-blocking on failure; `server.log` + `error.log` |
 | Boot time         | ≤ 5 seconds |

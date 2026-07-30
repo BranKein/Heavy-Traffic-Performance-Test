@@ -1,6 +1,14 @@
 spring:
   application:
     name: spring_webflux_jooq
+  # Flyway 폐기: 스키마는 perf 시드(seed/schema.sql)가 앱 기동 전에 생성한다.
+  # 여러 앱이 같은 DB 에 동시 마이그레이션하다 오염되는 문제를 피하기 위함.
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
+
+# JWT 검증 설정 (SR §4). 공개키는 프로퍼티로 외부 주입한다.
+# public-key: RSA-2048 공개키를 Base64(DER, X.509 SubjectPublicKeyInfo)로 인코딩한 값.
+# (개발용 자체 생성 키 — 테스트 시 외부에서 override 가능)
+jwt:
+  issuer: PUSH_BROADCASTING
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoDrEGlz9BM3Om7UXtp3JHyNZsknZCXT1Uz3xddp36J+oevYKdp3H3ZGdfL3R5QfBA8bbWCqEu9VAB8UXEFIpRZ3YT9NEXb2erp39dmOZd5RPIceTNO5cuzrP/2hwDSv25/BjcgYMFpdGybrHnGy/tueWFr5Cvy5gLv+DYz0uDAKM2xHB3f4f0JUiyK7KPTWJLQj5jqCPlE6FJeRIlcGZs6vGHg2RVotyo/PAh1nRlVNbL281Hcn+luhAE6fdDtREdaLhlfiym8o1Wlv5rT8W7NVYA4plk9Dq4mwkkRZM4CtSj076bkM38cKTcIx9MbQh7riE3eAMxHj8uhjI/PSuvQIDAQAB

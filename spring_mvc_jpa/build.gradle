@@ -25,6 +25,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-flyway'
     implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
@@ -42,3 +45,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 참고: MVC+JPA 서버는 네이티브 이미지를 쓰지 않는다(Awful 기준선이자, Spring Boot 4.1 +
+// Hibernate 7 조합은 현재 GraalVM reachability-metadata 가 미비해 네이티브 기동이 깨진다 —
+// service registry 의 리플렉션 주입까지 메타데이터에 누락됨). 배포는 JVM 이미지(Dockerfile)로 한다.
