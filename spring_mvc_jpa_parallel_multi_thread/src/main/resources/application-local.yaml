@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chat_server
+    username: chat
+    password: chat1234
+    driver-class-name: org.postgresql.Driver
+
+push:
+  server-url: http://localhost:9000
+  # 푸시 fan-out 플랫폼 스레드 풀 크기 = 동시 푸시 상한 (PUSH_POOLSIZE 로 override)
+  pool-size: 200

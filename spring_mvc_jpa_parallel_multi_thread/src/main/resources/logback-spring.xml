@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Spring Boot 기본 로그 패턴(CONSOLE_LOG_PATTERN, FILE_LOG_PATTERN 등) 로드 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property name="LOG_DIR" value="${LOG_DIR:-logs}"/>
+
+    <!-- 콘솔 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- server.log : Spring Boot 서버 자체 로그 + API 로그 (SR §8) -->
+    <appender name="FILE_SERVER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/server.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/server.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- error.log : 서버 내 에러 Call Stack (SR §8) -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- API 요청 로그 전용 로거 → server.log -->
+    <logger name="api" level="INFO" additivity="false">
+        <appender-ref ref="FILE_SERVER"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 에러 Call Stack 전용 로거 → error.log -->
+    <logger name="ERROR_FILE" level="ERROR" additivity="false">
+        <appender-ref ref="FILE_ERROR"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 루트: 콘솔 + server.log -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_SERVER"/>
+    </root>
+
+</configuration>

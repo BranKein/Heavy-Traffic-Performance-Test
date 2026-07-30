@@ -1,0 +1,7 @@
+# 컨테이너 안에서 clean 빌드하므로 호스트 산출물/캐시는 제외
+build/
+.gradle/
+logs/
+*.log
+.idea/
+.git/
