@@ -1,0 +1,78 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: perf
+
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - fake-push.yaml
+  - chat-mvc.yaml
+  - chat-mvc-parallel-virtual-thread.yaml
+  - chat-mvc-parallel-multi-thread.yaml
+  - chat-webflux.yaml
+  - chat-go.yaml
+  - chat-nestjs.yaml
+  - cadvisor.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - control.yaml
+  # 부하 실행 Job 은 필요 시 개별 apply (README 참고): seed-job.yaml, k6-chat-job.yaml, k6-push-job.yaml
+  # 단, 마스터 컨트롤 패널(control.yaml, NodePort 30800)에서 테스트 시작/중지/조회 가능
+
+# 시드 산출물/키를 클러스터 리소스로 주입 (먼저 `node ../seed/generate.mjs` 실행 필요).
+# 주의: etcd 오브젝트 1MB 제한 — 대용량 시드는 terraform VM 의 hostPath 방식 사용(README 참고).
+configMapGenerator:
+  - name: perf-data
+    files:
+      - users.json=../out/users.json
+      - seed.sql=../out/seed.sql
+  # Grafana 프로비저닝 (docker-compose 와 동일 파일 재사용)
+  - name: grafana-datasource
+    files:
+      - datasource.yml=../docker/grafana/provisioning/datasources/datasource.yml
+  - name: grafana-dashboards-provider
+    files:
+      - dashboards.yml=../docker/grafana/provisioning/dashboards/dashboards.yml
+  - name: grafana-dashboard-json
+    files:
+      - perf.json=../docker/grafana/dashboards/perf.json
+  # k6 스크립트 (Job 에서 마운트). options.js 는 볼륨 items 로 lib/ 하위에 배치.
+  - name: k6-scripts
+    files:
+      - chat_test.js=../k6/chat_test.js
+      - push_test.js=../k6/push_test.js
+      - options.js=../k6/lib/options.js
+
+secretGenerator:
+  - name: jwt-public-key
+    files:
+      - public-key=../keys/jwt-public-key.b64
+
+# 이미지는 Docker Hub(yeonhyukkim/*)에서 pull. publish-images.sh 로 먼저 push 해둔다.
+# 네임스페이스/태그를 바꾸려면 여기 newName/newTag 를 수정(publish-images.sh 의 DOCKER_NS/TAG 와 일치).
+images:
+  - name: chat-mvc
+    newName: yeonhyukkim/htpt-spring-mvc
+    newTag: latest
+  - name: chat-mvc-parallel-virtual-thread
+    newName: yeonhyukkim/htpt-spring-mvc-parallel-virtual-thread
+    newTag: latest
+  - name: chat-mvc-parallel-multi-thread
+    newName: yeonhyukkim/htpt-spring-mvc-parallel-multi-thread
+    newTag: latest
+  - name: chat-webflux
+    newName: yeonhyukkim/htpt-spring-webflux
+    newTag: latest
+  - name: chat-go
+    newName: yeonhyukkim/htpt-go
+    newTag: latest
+  - name: chat-nestjs
+    newName: yeonhyukkim/htpt-nestjs
+    newTag: latest
+  - name: perf-control
+    newName: yeonhyukkim/htpt-perf-control
+    newTag: latest
+
+generatorOptions:
+  disableNameSuffixHash: true

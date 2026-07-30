@@ -1,0 +1,102 @@
+# 멀티노드용 스크레이프: cadvisor(DaemonSet, 전 노드)·fake-push(replica 5)를
+# Service ClusterIP 하나로 긁으면 노드/replica 중 하나만 잡힌다. 그래서 kubernetes_sd
+# (role: pod)로 perf 네임스페이스의 해당 파드를 전부 개별 스크레이프한다.
+# 이를 위해 prometheus 에 파드/엔드포인트 조회 RBAC 가 필요하다(아래 ServiceAccount/Role).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: [""]
+    resources: [pods, services, endpoints]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    # namespace 는 kustomize 가 주입(perf)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+    scrape_configs:
+      # cadvisor: 컨테이너 메모리/CPU. 전 노드 DaemonSet 파드를 각각 podIP:8080 로 스크레이프.
+      # k8s 컨테이너 이름을 name 라벨로 복사 → docker-compose 대시보드와 동일 쿼리(name=~...) 유지.
+      - job_name: cadvisor
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [perf] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: cadvisor
+        metric_relabel_configs:
+          - source_labels: [container_label_io_kubernetes_container_name]
+            target_label: name
+      # fake-push: replica 5 를 모두 개별 스크레이프(actuator).
+      - job_name: fake-push
+        metrics_path: /actuator/prometheus
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: { names: [perf] }
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: fake-push-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: prometheus }
+  template:
+    metadata:
+      labels: { app: prometheus }
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.54.1
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --web.enable-remote-write-receiver
+            - --enable-feature=native-histograms
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - { name: config, mountPath: /etc/prometheus }
+      volumes:
+        - name: config
+          configMap: { name: prometheus-config }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector: { app: prometheus }
+  ports:
+    - port: 9090
+      targetPort: 9090

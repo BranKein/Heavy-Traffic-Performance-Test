@@ -1,0 +1,11 @@
+# 시딩 생성물 (개인키·토큰 포함 — 절대 커밋 금지)
+keys/
+out/
+
+# terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+!terraform/*.tfvars.example

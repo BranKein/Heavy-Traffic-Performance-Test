@@ -1,0 +1,274 @@
+# 로컬 성능 테스트 스택 (k6 구성 검증용).
+# 실제 부하 테스트는 terraform(AWS EC2 + k3s) + k8s/ 매니페스트로 실행한다.
+#
+# 사용법은 README.md 참고. 요약:
+#   1) node seed/generate.mjs                (키/시드 생성)
+#   2) ./run-local.sh mvc smoke              (빌드→기동→시드적재→k6 실행)
+#
+# 관찰성: cadvisor(컨테이너 메모리/CPU) + prometheus(k6 remote-write 수신) + grafana.
+# 컨테이너 이름은 perf- 접두사로 분리해 기존 local_dev 스택과 충돌하지 않는다.
+
+name: heavy-traffic-perf
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: perf-postgres
+    environment:
+      POSTGRES_DB: chat_server
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat1234
+    ports:
+      - "5433:5432"      # 기존 local_dev(5432)와 충돌 방지
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat -d chat_server"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  fake-push-server:
+    image: yeonhyukkim/fake-push-server:latest
+    container_name: perf-fake-push
+    pull_policy: always
+    ports:
+      - "9001:8090"      # 기존 local_dev(9000)와 충돌 방지
+
+  # Awful Chatting Push Server (Spring MVC + JPA).
+  # 로컬 워크트리에 소스가 없을 수 있으므로 run-local.sh 가 원본 모듈에서 chat-mvc:local 을 미리 빌드한다.
+  # (병합 후 정상 배치에서는 `docker compose build chat-mvc` 로 빌드 가능)
+  chat-mvc:
+    image: chat-mvc:local
+    build:
+      context: ../spring_mvc_jpa
+    container_name: perf-chat-mvc
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8080"
+      # Tomcat 기본 max-threads(200)가 400 VU stress 테스트에서 병목으로 확인됨(동시 처리
+      # 요청수 캡). 커넥션 풀이 아니라 그 캡 자체가 문제였으므로 여유있게 올려둠 — 스레드
+      # 하나당 스택 ~1MB 기준 500개면 ~500MB, 2GB 메모리 제한 안에서 안전한 수준.
+      SERVER_TOMCAT_THREADS_MAX: ${TOMCAT_MAX_THREADS:-500}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-20}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chat_server
+      SPRING_DATASOURCE_USERNAME: chat
+      SPRING_DATASOURCE_PASSWORD: chat1234
+      PUSH_SERVERURL: http://fake-push-server:8090
+      JWT_PUBLICKEY: ${JWT_PUBLICKEY:?run-local.sh 가 keys/jwt-public-key.b64 에서 주입}
+    ports:
+      - "8080:8080"
+    # vCPU 1 / RAM 2GB 제한 (SR §10)
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  # Parallel(virtual-thread) 버전: 푸시를 가상 스레드로 fan-out (Spring MVC + JPA).
+  chat-mvc-parallel-virtual-thread:
+    image: chat-mvc-parallel-virtual-thread:local
+    build:
+      context: ../spring_mvc_jpa_parallel_virtual_thread
+    container_name: perf-chat-mvc-parallel-virtual-thread
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8080"
+      SERVER_TOMCAT_THREADS_MAX: ${TOMCAT_MAX_THREADS:-500}
+      # 기본 10 → HikariCP 커넥션 풀이 동시 처리량 상한이 되던 문제 확인(stress 테스트) —
+      # ChatService 도 트랜잭션 구간을 push 팬아웃 전으로 줄였지만, 안전 마진으로 같이 올림.
+      # postgres max_connections(100) 공유 자원이라 과하게 키우지 않음(여러 SUT 이 나눠 씀).
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-20}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chat_server
+      SPRING_DATASOURCE_USERNAME: chat
+      SPRING_DATASOURCE_PASSWORD: chat1234
+      PUSH_SERVERURL: http://fake-push-server:8090
+      JWT_PUBLICKEY: ${JWT_PUBLICKEY:?run-local.sh 가 keys/jwt-public-key.b64 에서 주입}
+    ports:
+      - "8082:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  # Parallel(platform-thread) 버전: 고정 크기 플랫폼 스레드 풀로 fan-out (Spring MVC + JPA).
+  chat-mvc-parallel-multi-thread:
+    image: chat-mvc-parallel-multi-thread:local
+    build:
+      context: ../spring_mvc_jpa_parallel_multi_thread
+    container_name: perf-chat-mvc-parallel-multi-thread
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8080"
+      SERVER_TOMCAT_THREADS_MAX: ${TOMCAT_MAX_THREADS:-500}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-20}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chat_server
+      SPRING_DATASOURCE_USERNAME: chat
+      SPRING_DATASOURCE_PASSWORD: chat1234
+      PUSH_SERVERURL: http://fake-push-server:8090
+      # 200이 stress 테스트에서 실질 병목으로 확인(Little's Law로 concurrency≈poolsize 일치) —
+      # Tomcat max-threads(500)와 마찬가지로 넉넉히 올림. 플랫폼 스레드라 스택 메모리 소모
+      # 있으니(스레드당 최대 ~1MB) 재기동 후 docker stats 로 실측 확인할 것.
+      PUSH_POOLSIZE: ${PUSH_POOLSIZE:-1000}   # 동시 푸시 상한(플랫폼 스레드 풀 크기)
+      JWT_PUBLICKEY: ${JWT_PUBLICKEY:?run-local.sh 가 keys/jwt-public-key.b64 에서 주입}
+    ports:
+      - "8083:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  # Better Chatting Push Server (Spring WebFlux + jOOQ). 구현 완료 시 활성화.
+  chat-webflux:
+    image: chat-webflux:local
+    build:
+      context: ../spring_webflux_jooq
+    container_name: perf-chat-webflux
+    profiles: ["webflux"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8080"
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/chat_server
+      SPRING_R2DBC_USERNAME: chat
+      SPRING_R2DBC_PASSWORD: chat1234
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chat_server
+      SPRING_DATASOURCE_USERNAME: chat
+      SPRING_DATASOURCE_PASSWORD: chat1234
+      # 주의: webflux 의 PushProperties 는 필드명이 baseUrl(=push.base-url) 이라 다른 서버들과
+      # 같은 PUSH_SERVERURL 로는 바인딩되지 않는다(MVC 계열은 serverUrl=push.server-url 이라 맞음).
+      # 잘못 두면 baseUrl 이 null 이 되어 WebClient 가 localhost:80 으로 나가 즉시 Connection
+      # refused 로 실패 → PushClient 가 이를 흡수(Mono.empty)해 500ms 지연 없이 응답이 나가버림.
+      PUSH_BASEURL: http://fake-push-server:8090
+      JWT_PUBLICKEY: ${JWT_PUBLICKEY:-}
+    ports:
+      - "8081:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  # Go Chatting Push Server (Gin + pgx). 스키마는 공유 postgres(다른 SUT 의 Flyway/드리즐)에서 생성됨.
+  chat-go:
+    image: chat-go:local
+    build:
+      context: ../go_gin_pgx
+    container_name: perf-chat-go
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8080"
+      DATABASE_URL: postgres://chat:chat1234@postgres:5432/chat_server
+      PUSH_SERVER_URL: http://fake-push-server:8090
+      JWT_PUBLIC_KEY: ${JWT_PUBLICKEY:?run-local.sh 가 keys/jwt-public-key.b64 에서 주입}
+    ports:
+      - "8084:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  # NestJS Chatting Push Server (NestJS + Drizzle). RUN_MIGRATIONS=true 라도 drizzle 은 CREATE TABLE IF NOT EXISTS.
+  chat-nestjs:
+    image: chat-nestjs:local
+    build:
+      context: ../nestjs_drizzle
+    container_name: perf-chat-nestjs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://chat:chat1234@postgres:5432/chat_server
+      PUSH_SERVER_URL: http://fake-push-server:8090
+      RUN_MIGRATIONS: "true"
+      LOG_DIR: /app/logs
+      JWT_PUBLIC_KEY: ${JWT_PUBLICKEY:?run-local.sh 가 keys/jwt-public-key.b64 에서 주입}
+    ports:
+      - "8085:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: perf-cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: perf-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: perf-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # 마스터 컨트롤 패널 — 대상 확인 / k6 테스트 시작·중지 / 로그·지표 조회.
+  # host docker.sock 에 붙어 k6 컨테이너를 직접 띄운다(docker 모드).
+  # k6 컨테이너는 --volumes-from perf-control 로 아래 /scripts·/out 마운트를 물려받는다.
+  perf-control:
+    image: perf-control:local
+    build:
+      context: ./control
+    container_name: perf-control
+    environment:
+      PERF_ORCH: docker
+      PROM_URL: http://prometheus:9090
+      GRAFANA_PORT: "3000"
+      DOCKER_NETWORK: heavy-traffic-perf_default
+      K6_VOLUMES_FROM: perf-control
+      # 실행 기록/결과/시계열 영속화 — 공유 perf-postgres 의 control 스키마 (perf-control-persistence-plan)
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: chat_server
+      PGUSER: chat
+      PGPASSWORD: chat1234
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./k6:/scripts:ro
+      - ./out:/out:ro
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prometheus:
+        condition: service_started

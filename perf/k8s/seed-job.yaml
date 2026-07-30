@@ -1,0 +1,26 @@
+# 스키마 + 시드 SQL 적재 Job. Flyway 폐기 → out/seed.sql 이 스키마 DDL(seed/schema.sql)과
+# 데이터를 함께 담는다. Spring 앱(flyway off + ddl-auto=validate)이 뜨기 전에 실행해야 한다
+# (bootstrap.sh 가 postgres ready → 이 Job → Spring rollout 순서로 호출). (namespace: perf)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-db
+  namespace: perf
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seed
+          image: postgres:16-alpine
+          command: ["sh", "-c"]
+          args:
+            - |
+              until pg_isready -h postgres -U chat -d chat_server; do sleep 2; done
+              psql "postgresql://chat:chat1234@postgres:5432/chat_server" -v ON_ERROR_STOP=1 -f /data/seed.sql
+          volumeMounts:
+            - { name: data, mountPath: /data }
+      volumes:
+        - name: data
+          configMap: { name: perf-data }

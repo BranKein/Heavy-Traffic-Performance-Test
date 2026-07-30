@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-mvc-parallel-multi-thread
+  labels: { app: chat-mvc-parallel-multi-thread, role: sut }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: chat-mvc-parallel-multi-thread }
+  template:
+    metadata:
+      labels: { app: chat-mvc-parallel-multi-thread, role: sut }
+    spec:
+      # sut 노드에만 스케줄 (agent 노드 taint role=sut:NoSchedule 와 세트)
+      nodeSelector: { role: sut }
+      tolerations:
+        - { key: role, operator: Equal, value: sut, effect: NoSchedule }
+      containers:
+        - name: chat-mvc-parallel-multi-thread
+          image: chat-mvc-parallel-multi-thread   # tag 는 kustomization.images 에서 주입
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - { name: SERVER_PORT, value: "8080" }
+            - { name: SERVER_TOMCAT_THREADS_MAX, value: "500" }
+            - { name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE, value: "20" }
+            - { name: SPRING_DATASOURCE_URL, value: jdbc:postgresql://postgres:5432/chat_server }
+            - { name: SPRING_DATASOURCE_USERNAME, value: chat }
+            - { name: SPRING_DATASOURCE_PASSWORD, value: chat1234 }
+            # Flyway 폐기: 스키마는 시드가 만든다. (이미지 재빌드 전까지 런타임에서 강제 off)
+            - { name: SPRING_FLYWAY_ENABLED, value: "false" }
+            - { name: PUSH_SERVERURL, value: http://fake-push-server:8090 }
+            - { name: PUSH_POOLSIZE, value: "1000" }   # 동시 푸시 상한(플랫폼 스레드 풀 크기)
+            - name: JWT_PUBLICKEY
+              valueFrom:
+                secretKeyRef: { name: jwt-public-key, key: public-key }
+          # 테스트 대상 리소스 제한 (SR §10: vCPU 1 / RAM 2GB)
+          resources:
+            requests: { cpu: "100m", memory: 256Mi }
+            limits: { cpu: "1", memory: 2Gi }
+          startupProbe:
+            tcpSocket: { port: 8080 }
+            periodSeconds: 2
+            failureThreshold: 150
+          readinessProbe:
+            tcpSocket: { port: 8080 }
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-mvc-parallel-multi-thread
+spec:
+  selector: { app: chat-mvc-parallel-multi-thread }
+  ports:
+    - port: 8080
+      targetPort: 8080

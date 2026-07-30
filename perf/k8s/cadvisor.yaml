@@ -1,0 +1,52 @@
+# 컨테이너 리소스(메모리/CPU) 수집용 cadvisor. 단일 노드 k3s 기준 DaemonSet.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+spec:
+  selector:
+    matchLabels: { app: cadvisor }
+  template:
+    metadata:
+      labels: { app: cadvisor }
+    spec:
+      # 노드 메트릭 수집 DaemonSet 은 모든 노드에서 떠야 한다. sut/deps 노드의
+      # 커스텀 taint(role=...:NoSchedule)를 견디지 못하면 그 노드 컨테이너 메트릭이
+      # 안 잡혀 컨트롤 패널/그래프에서 SUT CPU·메모리가 빈다 → 전 taint 허용.
+      tolerations:
+        - operator: Exists
+      # /var/run 을 readonly hostPath 로 마운트하는데, 여기에 SA 토큰이
+      # /var/run/secrets/... 로 projected 마운트되면 read-only fs 충돌로 컨테이너가
+      # 안 뜬다(RunContainerError). cadvisor 는 k8s API 를 안 쓰므로 토큰을 끈다.
+      automountServiceAccountToken: false
+      containers:
+        - name: cadvisor
+          image: gcr.io/cadvisor/cadvisor:v0.49.1
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - { name: rootfs, mountPath: /rootfs, readOnly: true }
+            - { name: var-run, mountPath: /var/run, readOnly: true }
+            - { name: sys, mountPath: /sys, readOnly: true }
+            - { name: docker, mountPath: /var/lib/docker, readOnly: true }
+            - { name: containerd, mountPath: /run/containerd, readOnly: true }
+      volumes:
+        - { name: rootfs, hostPath: { path: / } }
+        - { name: var-run, hostPath: { path: /var/run } }
+        - { name: sys, hostPath: { path: /sys } }
+        - { name: docker, hostPath: { path: /var/lib/docker } }
+        - { name: containerd, hostPath: { path: /run/containerd } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadvisor
+  labels: { app: cadvisor }
+spec:
+  selector: { app: cadvisor }
+  ports:
+    - port: 8080
+      targetPort: 8080

@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # 컨테이너 리소스(메모리/CPU) — SUT 코드를 건드리지 않고 메모리 100MB 목표 검증
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Fake Push Server 는 자체적으로 Micrometer/Prometheus 노출 (actuator)
+  - job_name: fake-push
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['fake-push-server:8090']
+
+# k6 는 experimental-prometheus-rw output 으로 이 서버의 remote-write receiver 로 지표를 보낸다.
+# (Prometheus 는 --web.enable-remote-write-receiver 플래그로 기동)

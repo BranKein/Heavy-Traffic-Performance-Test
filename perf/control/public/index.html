@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Heavy Traffic — Perf Control</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚦</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🚦</span>
+      <div>
+        <h1>Heavy Traffic — Perf Control</h1>
+        <p class="sub" data-i18n="app.sub"></p>
+      </div>
+    </div>
+    <div class="topmeta">
+      <span class="lang-switch" id="lang-switch">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ko">KO</button>
+      </span>
+      <span class="pill" id="orch-pill">orch: …</span>
+      <a class="pill link" id="grafana-link" target="_blank" rel="noreferrer">📊 Grafana</a>
+      <span class="pill" id="clock"></span>
+    </div>
+  </header>
+
+  <main>
+    <div class="cols">
+      <!-- 테스트 시작 -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 data-i18n="panel.newTest"></h2>
+          <span class="hint" id="targets-hint"></span>
+        </div>
+        <form id="run-form" class="run-form">
+          <label><span data-i18n="label.targets"></span>
+            <div class="targets-grid" id="f-targets"></div>
+          </label>
+          <label><span data-i18n="label.profile"></span>
+            <div class="profiles" id="f-profiles"></div>
+          </label>
+          <label><span data-i18n="label.name"></span>
+            <input type="text" id="f-label" maxlength="200" data-i18n-ph="ph.label" />
+          </label>
+          <details class="adv">
+            <summary data-i18n="adv.summary"></summary>
+            <div class="adv-grid">
+              <label>VUS<input type="number" id="f-vus" min="1" data-i18n-ph="ph.vus" /></label>
+              <label>DURATION<input type="text" id="f-duration" data-i18n-ph="ph.duration" /></label>
+              <label><span data-i18n="adv.p95"></span><input type="number" id="f-p95" min="1" data-i18n-ph="ph.p95" /></label>
+              <label><span data-i18n="adv.err"></span><input type="number" id="f-err" step="0.01" min="0" max="1" data-i18n-ph="ph.err" /></label>
+              <label><span data-i18n="adv.bpMax"></span><input type="number" id="f-bp-max" min="1" data-i18n-ph="ph.bpMax" /></label>
+              <label><span data-i18n="adv.bpRps"></span><input type="number" id="f-bp-rps" min="1" data-i18n-ph="ph.bpRps" /></label>
+              <label><span data-i18n="adv.bpDur"></span><input type="text" id="f-bp-dur" data-i18n-ph="ph.bpDur" /></label>
+            </div>
+            <p class="note" data-i18n-html="note.adv"></p>
+          </details>
+          <button type="submit" class="btn primary" id="start-btn" data-i18n="btn.start"></button>
+          <p class="form-msg" id="run-msg"></p>
+        </form>
+      </section>
+
+      <!-- 실시간 지표 -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 data-i18n="panel.metrics"></h2>
+          <span class="metrics-sel">
+            <span class="hint" id="m-runlabel"></span>
+            <select id="m-target" class="mini-select"></select>
+          </span>
+        </div>
+        <div class="charts" id="charts"></div>
+        <div class="metrics-grid mini" id="metrics-stats"></div>
+        <p class="note" id="metrics-note" data-i18n="metrics.note"></p>
+      </section>
+    </div>
+
+    <!-- 실행 목록 -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2 data-i18n="panel.runs"></h2>
+        <div class="runs-toolbar">
+          <span class="hint" id="runs-hint"></span>
+          <button type="button" class="btn ghost mini" id="cmp-btn" data-i18n="btn.compare" disabled></button>
+          <button type="button" class="btn ghost mini" id="export-btn" data-i18n="btn.exportAll"></button>
+          <button type="button" class="btn ghost mini" id="import-btn" data-i18n="btn.import"></button>
+          <input type="file" id="import-file" accept="application/json" hidden />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="runs-table">
+          <thead><tr>
+            <th class="chk-col"></th>
+            <th data-i18n="th.id"></th>
+            <th data-i18n="th.target"></th>
+            <th data-i18n="th.profile"></th>
+            <th data-i18n="th.status"></th>
+            <th data-i18n="th.result"></th>
+            <th data-i18n="th.started"></th>
+            <th data-i18n="th.action"></th>
+          </tr></thead>
+          <tbody id="runs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- 로그 모달 -->
+  <div class="modal" id="log-modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="log-title" data-i18n="modal.log"></h3>
+        <div>
+          <button class="btn ghost" id="log-refresh" data-i18n="btn.refresh"></button>
+          <button class="btn ghost" id="log-close" data-i18n="btn.close"></button>
+        </div>
+      </div>
+      <pre class="log-body" id="log-body"></pre>
+    </div>
+  </div>
+
+  <!-- 비교 모달 -->
+  <div class="modal" id="cmp-modal" hidden>
+    <div class="modal-box cmp-box">
+      <div class="modal-head">
+        <h3 data-i18n="modal.compare"></h3>
+        <button class="btn ghost" id="cmp-close" data-i18n="btn.close"></button>
+      </div>
+      <div class="cmp-legend" id="cmp-legend"></div>
+      <p class="note" data-i18n="cmp.note"></p>
+      <div class="cmp-charts" id="cmp-charts"></div>
+    </div>
+  </div>
+
+  <div class="chart-tip" id="chart-tip" hidden></div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+# 채팅 서버 부하 테스트 Job (Awful MVC / Better WebFlux 공통).
+# BASE_URL 로 대상 전환: chat-mvc(기본) 또는 chat-webflux.
+# PROFILE 로 부하 프로파일 조절: smoke|load|stress|spike.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-chat
+  namespace: perf
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:latest
+          args:
+            - run
+            - -o
+            - experimental-prometheus-rw
+            - /scripts/chat_test.js
+          env:
+            - { name: BASE_URL, value: "http://chat-mvc:8080" }   # webflux: http://chat-webflux:8080
+            - { name: USERS_FILE, value: "/data/users.json" }
+            - { name: PROFILE, value: "load" }
+            - { name: TARGET_NAME, value: "mvc" }
+            - { name: K6_PROMETHEUS_RW_SERVER_URL, value: "http://prometheus:9090/api/v1/write" }
+            - { name: K6_PROMETHEUS_RW_TREND_STATS, value: "p(95),p(99),avg,min,max" }
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+            - { name: data, mountPath: /data }
+      volumes:
+        - name: scripts
+          configMap:
+            name: k6-scripts
+            items:
+              - { key: chat_test.js, path: chat_test.js }
+              - { key: options.js, path: lib/options.js }
+        - name: data
+          configMap: { name: perf-data }

@@ -1,0 +1,271 @@
+:root {
+  --bg: #0d1017;
+  --panel: #161b26;
+  --panel-2: #1d2330;
+  --border: #262d3d;
+  --text: #e6eaf2;
+  --muted: #8b95a7;
+  --accent: #5b8cff;
+  --accent-2: #7c5cff;
+  --ok: #3fce7c;
+  --warn: #ffcc4d;
+  --err: #ff6b6b;
+  --run: #4da3ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  background: radial-gradient(1200px 600px at 80% -10%, #1a2135 0%, var(--bg) 55%) fixed;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+h1, h2, h3 { margin: 0; font-weight: 650; }
+a { color: var(--accent); text-decoration: none; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+  background: rgba(13,16,23,.7); backdrop-filter: blur(8px);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { display: flex; gap: 14px; align-items: center; }
+.logo { font-size: 30px; }
+.topbar h1 { font-size: 18px; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+.topmeta { display: flex; gap: 8px; align-items: center; }
+.pill {
+  font-size: 12px; padding: 5px 11px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+  white-space: nowrap;
+}
+.pill.link { color: var(--accent); cursor: pointer; }
+.pill.link:hover { border-color: var(--accent); }
+
+/* 언어 스위치 */
+.lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--panel-2); }
+.lang-switch button {
+  background: transparent; border: none; color: var(--muted);
+  padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: .02em;
+}
+.lang-switch button:hover { color: var(--text); }
+.lang-switch button.sel { background: rgba(91,140,255,.18); color: #cfe0ff; }
+
+main { max-width: 1600px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.cols { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start; }
+/* 그리드 자식의 기본 min-width:auto(=min-content) 때문에 내부 캔버스가 커지면
+   트랙이 늘어나 옆 패널을 찌그러뜨린다. min-width:0 으로 트랙을 창 크기에만
+   묶고 넘치는 그래프는 .chart-scroll 안에서만 가로 스크롤되게 한다. */
+.cols > * { min-width: 0; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; }
+.panel-head h2 { font-size: 15px; }
+.hint { color: var(--muted); font-size: 12px; }
+
+/* 대상 서버 선택 칩 (1열) */
+.targets-grid { display: flex; flex-direction: column; gap: 8px; }
+.trow { display: flex; align-items: center; gap: 8px; }
+.tchip {
+  flex: 1 1 auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 9px 13px; font-size: 13px; cursor: pointer;
+  font-family: ui-monospace, monospace; text-align: left;
+}
+.tchip:hover { border-color: var(--accent); }
+.tchip.sel { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
+.chip-busy { margin-left: auto; color: var(--run); font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.chip-busy::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--run); box-shadow: 0 0 6px var(--run); animation: busy-pulse 1.2s ease-in-out infinite; }
+@keyframes busy-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.tspec { flex: none; font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; white-space: nowrap; }
+.tlog {
+  flex: none; width: 22px; height: 22px; padding: 0; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; line-height: 1; cursor: pointer;
+}
+.tlog:hover { border-color: var(--accent); color: var(--accent); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.up { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.dot.down { background: var(--err); }
+.dot.absent { background: #4a5163; }
+
+/* 정보 아이콘 + 팝오버 */
+.tinfo { position: relative; flex: none; display: inline-flex; cursor: pointer; outline: none; }
+.ibadge {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--muted); color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-style: italic; font-weight: 700; line-height: 1;
+}
+.tinfo:hover .ibadge, .tinfo.open .ibadge, .tinfo:focus .ibadge { border-color: var(--accent); color: var(--accent); }
+.tpop {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+  width: 300px; max-width: 78vw;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; box-shadow: 0 12px 34px rgba(0,0,0,.5);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+.tinfo:hover .tpop, .tinfo.open .tpop, .tinfo:focus .tpop { display: block; }
+.tpop-title { display: block; font-weight: 650; font-size: 13px; margin-bottom: 8px; }
+.tpop-row { display: grid; grid-template-columns: 76px 1fr; gap: 8px; font-size: 12px; padding: 3px 0; }
+.tpop-row em { color: var(--muted); font-style: normal; }
+.tpop-row span { color: var(--text); }
+/* 프로파일 팝오버: 왼쪽 기준으로 펼침(왼쪽 넘침 방지), 설명 문단형 */
+.prof-pop { right: auto; left: 0; width: 280px; }
+.prof-pop .tpop-title { text-transform: capitalize; }
+.tpop-desc { display: block; font-size: 12px; line-height: 1.5; color: var(--text); }
+
+/* 폼 */
+.run-form { display: flex; flex-direction: column; gap: 14px; }
+.run-form label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+select, input[type=number], input[type=text] {
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; width: 100%;
+}
+.mini-select { width: auto; padding: 5px 8px; font-size: 12px; }
+.profiles { display: flex; gap: 8px; flex-wrap: wrap; }
+.prow { display: inline-flex; align-items: center; gap: 5px; }
+.profiles button {
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; text-transform: capitalize;
+}
+.profiles button.sel { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
+.adv summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.adv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.note { color: var(--muted); font-size: 11px; margin: 6px 0 0; }
+
+.btn { border: none; border-radius: 9px; padding: 10px 16px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; font-weight: 500; }
+.btn.ghost:hover { border-color: var(--accent); }
+.btn.danger { background: transparent; border: 1px solid var(--err); color: var(--err); padding: 5px 12px; font-size: 12px; }
+.btn.danger:hover { background: rgba(255,107,107,.12); }
+.btn.mini { padding: 5px 12px; font-size: 12px; }
+.form-msg { font-size: 12px; margin: 0; min-height: 16px; }
+.form-msg.err { color: var(--err); }
+.form-msg.ok { color: var(--ok); }
+
+/* 지표 */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.metric { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.metric .label { color: var(--muted); font-size: 11px; }
+.metric .val { font-size: 20px; font-weight: 650; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.metric .val small { font-size: 12px; color: var(--muted); font-weight: 400; }
+.metric.alert .val { color: var(--err); }
+
+/* 테이블 */
+.table-wrap { overflow-x: auto; }
+.runs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.runs-table th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.runs-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.runs-table td.id { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.runs-table tr:last-child td { border-bottom: none; }
+.runs-table tbody tr[data-run] { cursor: pointer; }
+.runs-table tbody tr[data-run]:hover { background: rgba(255,255,255,.03); }
+.runs-table tbody tr.sel { background: rgba(91,140,255,.10); }
+.runs-table tbody tr.sel td.id { color: #cfe0ff; }
+/* 실행 이름(라벨) — 지정 시 이름을 위에 굵게, id 는 그 아래 작게. 지정 없으면 id 만 muted 로.
+   .run-id-sub 가 block 이라 연필 버튼이 같은 inline 흐름에 있으면 그 아래로 밀려 개행되므로,
+   이름/id 묶음(.name-wrap)과 버튼을 별도의 flex 행(.name-row)에 나란히 둬서 막는다. */
+.name-row { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.name-wrap { display: inline-flex; flex-direction: column; min-width: 0; }
+.run-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; font-size: 13px; color: var(--text); }
+.run-name.muted { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); }
+.run-id-sub { font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted); line-height: 1.4; }
+.rename-btn { flex: none; padding: 2px 6px; font-size: 11px; opacity: .55; }
+.rename-btn:hover { opacity: 1; }
+.rename-input {
+  width: 160px; background: var(--panel-2); border: 1px solid var(--accent); color: var(--text);
+  border-radius: 6px; padding: 4px 7px; font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+.badge.running { background: rgba(77,163,255,.16); color: var(--run); }
+.badge.completed { background: rgba(63,206,124,.16); color: var(--ok); }
+.badge.failed { background: rgba(255,107,107,.16); color: var(--err); }
+.badge.pending { background: rgba(139,149,167,.16); color: var(--muted); }
+.empty { color: var(--muted); text-align: center; padding: 20px; font-size: 13px; }
+
+/* 모달 */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+[hidden] { display: none !important; }
+.modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(900px, 100%); max-height: 80vh; display: flex; flex-direction: column; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.modal-head h3 { font-size: 14px; font-family: ui-monospace, monospace; }
+.log-body { margin: 0; padding: 16px 18px; overflow: auto; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; color: #c8d0de; white-space: pre-wrap; word-break: break-word; }
+
+/* 토스트 */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--border); padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 60; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+.toast.ok { border-color: var(--ok); }
+.toast.err { border-color: var(--err); }
+
+/* 실시간 그래프 */
+.charts { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.chart-title { font-size: 12px; color: var(--muted); }
+.chart-val { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.chart-scroll { overflow-x: auto; overflow-y: hidden; border-radius: 6px; }
+.chart-scroll::-webkit-scrollbar { height: 8px; }
+.chart-scroll::-webkit-scrollbar-track { background: transparent; }
+.chart-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+.chart-canvas { height: 116px; display: block; cursor: crosshair; }
+/* 그래프 hover 툴팁 (커서 따라다니는 고정 박스). 비교 모달(.modal, z-index:50) 안에서도 쓰이므로
+   그보다 위에 있어야 한다 — 안 그러면 모달 패널 뒤에 가려져 안 보인다. */
+.chart-tip {
+  position: fixed; z-index: 60; pointer-events: none;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 11px; min-width: 130px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.chart-tip .tip-time { color: var(--muted); font-size: 10px; margin-bottom: 6px; font-family: ui-monospace, monospace; }
+.chart-tip .tip-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 1px 0; font-variant-numeric: tabular-nums; }
+.chart-tip .tip-row .k { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.chart-tip .tip-row .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.chart-tip .tip-row .v { color: var(--text); font-weight: 600; }
+/* 지표 패널 헤더 — 표시 중인 실행 라벨 + 대상 셀렉트 */
+.metrics-sel { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#m-runlabel { font-family: ui-monospace, monospace; font-size: 11px; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.metrics-grid.mini { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.metrics-grid.mini .metric { padding: 10px; }
+.metrics-grid.mini .val { font-size: 16px; }
+/* 실행 목록 인라인 결과 */
+.runs-table td.result { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.runs-table td.result b { color: var(--text); font-weight: 600; }
+.muted { color: var(--muted); }
+
+/* 실행 목록 툴바(비교/Export/Import) + 선택 체크박스 */
+.runs-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.runs-table th.chk-col, .runs-table td.chk { width: 28px; padding-right: 0; }
+.runs-table input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+.runs-table td.result-export { white-space: nowrap; }
+
+/* 비교 모달 */
+.cmp-box { width: min(1100px, 100%); max-height: 88vh; }
+.cmp-legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px 0; }
+/* .note 는 기본적으로 좌우 패딩이 없어(다른 곳에선 이미 패딩 있는 부모 안에서 쓰임) 모달 벽에
+   딱 붙어 보인다 — legend/charts 와 맞춰 18px 좌우 패딩을 준다. */
+.cmp-box .note { padding: 0 18px; margin-top: 8px; }
+.cmp-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 999px; padding: 6px 12px; font-size: 11px; font-family: ui-monospace, monospace; cursor: pointer;
+}
+.cmp-chip .sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.cmp-chip.off { opacity: .4; text-decoration: line-through; }
+.cmp-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px 18px 18px; overflow-y: auto; }
+/* 그리드 자식 기본 min-width:auto 때문에 안의 캔버스(고정 px 폭)가 패널·모달을 계속 넓히는 것을
+   막는다(min-width:0) — 넘치는 그래프는 .chart-scroll 안에서만 가로 스크롤된다(실시간 그래프와 동일 패턴). */
+.cmp-charts > * { min-width: 0; }
+@media (max-width: 720px) { .cmp-charts { grid-template-columns: 1fr; } }
+/* block(=display 기본값) 유지 — flex/grid 컨테이너로 두면 자식 .chart-scroll 이 다시
+   min-width:auto 컨텍스트에 놓여 캔버스 폭만큼 폭이 계속 늘어나는 문제가 재발한다. */
+.cmp-chart { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.cmp-chart .chart-scroll { border-radius: 0; }
+.cmp-canvas { height: 140px; display: block; cursor: crosshair; }
+.chart-tip .tip-sub { color: var(--muted); font-size: 10px; padding: 0 0 6px 14px; white-space: nowrap; }

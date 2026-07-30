@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      # deps 노드에만 스케줄 (agent 노드 taint role=deps:NoSchedule 와 세트)
+      nodeSelector: { role: deps }
+      tolerations:
+        - { key: role, operator: Equal, value: deps, effect: NoSchedule }
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_DB, value: chat_server }
+            - { name: POSTGRES_USER, value: chat }
+            - { name: POSTGRES_PASSWORD, value: chat1234 }
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "chat", "-d", "chat_server"]
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector: { app: postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432

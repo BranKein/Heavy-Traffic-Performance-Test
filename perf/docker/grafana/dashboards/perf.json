@@ -1,0 +1,88 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "title": "Heavy Traffic — k6 + Container Resources",
+  "uid": "heavy-traffic-perf",
+  "schemaVersion": 39,
+  "tags": ["k6", "perf"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "container",
+        "label": "SUT container",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(container_memory_working_set_bytes{name=~\"perf-chat.*|perf-fake-push|chat-.*|fake-push-server\"}, name)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP 요청 속도 (req/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(k6_http_reqs_total[15s]))", "legendFormat": "req/s" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "응답 지연 (p95 / p99, ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "targets": [
+        { "expr": "k6_http_req_duration_p95", "legendFormat": "p95" },
+        { "expr": "k6_http_req_duration_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "가상 유저 수 (VUs)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [{ "expr": "k6_vus", "legendFormat": "VUs" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "checks 통과율 & HTTP 실패율",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 }, "overrides": [] },
+      "targets": [
+        { "expr": "rate(k6_checks_total{outcome=\"pass\"}[30s]) / clamp_min(rate(k6_checks_total[30s]), 1)", "legendFormat": "checks pass" },
+        { "expr": "rate(k6_http_req_failed_total[30s]) / clamp_min(rate(k6_http_reqs_total[30s]), 1)", "legendFormat": "http fail" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "컨테이너 메모리 (working set) — 목표 100MB 이하",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 104857600 } ] }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "container_memory_working_set_bytes{name=~\"$container\"}", "legendFormat": "{{name}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "컨테이너 CPU (cores)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "rate(container_cpu_usage_seconds_total{name=~\"$container\"}[30s])", "legendFormat": "{{name}}" }
+      ]
+    }
+  ]
+}
