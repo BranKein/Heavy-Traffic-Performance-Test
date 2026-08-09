@@ -50,7 +50,10 @@ kind: Service
 metadata:
   name: chat-mvc-parallel-multi-thread
 spec:
+  type: NodePort
+  externalTrafficPolicy: Local
   selector: { app: chat-mvc-parallel-multi-thread }
   ports:
     - port: 8080
       targetPort: 8080
+      nodePort: 30080

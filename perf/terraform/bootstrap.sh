@@ -19,6 +19,23 @@ $K get nodes -L role
 #    generator 소스가 k8s/ 밖(perf/out, perf/keys 등)에 있으므로 load-restrictor 완화 필요
 $K kustomize --load-restrictor LoadRestrictionsNone perf/k8s/ | $K apply -f -
 
+# 3-1. k6 chat Job 이 때릴 chat base URL 을 configmap(chat-endpoint) 으로 주입.
+#      terraform remote-exec 가 CHAT_ENDPOINT=<NLB DNS>:80 를 넘기면 NLB 경유(부하가
+#      harness→NLB→sut NodePort 실경로를 탄다). 없으면 cluster DNS 로 폴백.
+#      (create --dry-run|apply 로 재실행 시 idempotent)
+CHAT_BASE_URL="http://${CHAT_ENDPOINT:-chat-mvc:8080}"
+echo "k6 chat BASE_URL = ${CHAT_BASE_URL}"
+$K -n perf create configmap chat-endpoint \
+  --from-literal=BASE_URL="${CHAT_BASE_URL}" \
+  --dry-run=client -o yaml | $K apply -f -
+
+# 3-2. 컨트롤 패널로 시작하는 부하도 실경로(NLB)를 타도록 perf-control 에 CHAT_ENDPOINT 주입.
+#      (server.mjs 가 sut 타깃 BASE_URL 을 http://$CHAT_ENDPOINT 로 사용. 비면 svc DNS 폴백)
+#      set env 는 값 변경 시에만 롤아웃을 유발하므로 재실행 idempotent.
+if [ -n "${CHAT_ENDPOINT:-}" ]; then
+  $K -n perf set env deploy/perf-control CHAT_ENDPOINT="${CHAT_ENDPOINT}"
+fi
+
 # 4. 스키마 + 시드 적재 (Flyway 폐기 → 시드가 스키마 소유).
 #    Spring 앱은 flyway off + ddl-auto=validate 이므로 스키마가 먼저 있어야 검증을 통과한다.
 #    → Spring rollout 대기보다 먼저 postgres 를 띄우고 시드를 적재한다(순서 중요).

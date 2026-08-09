@@ -47,7 +47,10 @@ kind: Service
 metadata:
   name: chat-nestjs
 spec:
+  type: NodePort
+  externalTrafficPolicy: Local
   selector: { app: chat-nestjs }
   ports:
     - port: 8080
       targetPort: 8080
+      nodePort: 30080

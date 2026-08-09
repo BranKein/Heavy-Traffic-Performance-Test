@@ -74,3 +74,31 @@ variable "root_volume_gb" {
   default     = 30
 }
 
+# ── Multi-AZ 네트워크 (NLB 앞단) ────────────────────────────────────────
+# 단일 VPC / 단일 k3s 클러스터를 유지하되 AZ 만 분리한다:
+#  - harness(부하기)는 az_load(AZ-a) → 요청 경로에 cross-AZ RTT 반영
+#  - sut/deps/NLB/NAT 는 az_sut(AZ-c) → SUT↔DB 가 cross-AZ 되지 않게(측정 오염 방지)
+variable "vpc_cidr" {
+  description = "VPC CIDR"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "az_load" {
+  description = "부하기(harness) AZ. 요청 경로에 cross-AZ RTT 를 반영하기 위해 sut 와 다른 AZ."
+  type        = string
+  default     = "ap-northeast-2a"
+}
+
+variable "az_sut" {
+  description = "sut + deps + NLB + NAT AZ. SUT↔DB 를 same-AZ 로 묶어 DB 지연 오염 방지."
+  type        = string
+  default     = "ap-northeast-2c"
+}
+
+variable "chat_nodeport" {
+  description = "SUT chat 서버 NodePort (NLB target). k8s chat Service 의 nodePort 와 반드시 일치."
+  type        = number
+  default     = 30080
+}
+

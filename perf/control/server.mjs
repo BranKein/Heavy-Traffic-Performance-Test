@@ -43,6 +43,10 @@ const K6_IMAGE = process.env.K6_IMAGE || 'grafana/k6:latest';
 // 설정 시 host 경로 마운트(-v) 대신 `--volumes-from` 사용 (compose 스택에서 권장).
 const K6_VOLUMES_FROM = process.env.K6_VOLUMES_FROM || '';
 const AUTO_CLEANUP = (process.env.PERF_AUTO_CLEANUP ?? 'true').toLowerCase() !== 'false';
+// chat 부하가 실제 경로(harness→internal NLB→sut NodePort)를 타도록 하는 엔드포인트(host:port).
+// terraform/bootstrap 이 <NLB DNS>:80 로 주입한다. 비어 있으면(로컬 compose 등) 클러스터
+// DNS(svc:port)로 폴백. sut 타깃(chat)에만 적용 — push(fake-push) 는 그대로 직접 호출.
+const CHAT_ENDPOINT = process.env.CHAT_ENDPOINT || '';
 
 // ── 테스트 대상 카탈로그 ────────────────────────────────────────────────
 // svc      : 클러스터/네트워크 내부 DNS 이름 (k8s Service = compose service, 동일)
@@ -258,8 +262,10 @@ async function listRuns() {
 }
 
 function runEnv(t, body) {
+  // chat(sut) 타깃은 NLB 경유(실경로) — CHAT_ENDPOINT 주입 시. push 는 항상 svc 직접.
+  const baseUrl = t.sut && CHAT_ENDPOINT ? `http://${CHAT_ENDPOINT}` : `http://${t.svc}:${t.port}`;
   const env = {
-    BASE_URL: `http://${t.svc}:${t.port}`,
+    BASE_URL: baseUrl,
     PROFILE: body.profile || 'smoke',
     TARGET_NAME: t.key,
     // k6 컨테이너는 클러스터/compose 네트워크 내부에서 prometheus 서비스로 remote-write

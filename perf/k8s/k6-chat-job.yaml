@@ -20,7 +20,12 @@ spec:
             - experimental-prometheus-rw
             - /scripts/chat_test.js
           env:
-            - { name: BASE_URL, value: "http://chat-mvc:8080" }   # webflux: http://chat-webflux:8080
+            # chat base URL 은 bootstrap 이 만든 configmap(chat-endpoint)에서 주입.
+            # NLB 경유(CHAT_ENDPOINT 주입 시) 또는 cluster DNS 폴백. bootstrap 이 항상
+            # 생성하므로 optional=false 로 둬 누락 시 즉시 실패(잘못된 localhost 폴백 방지).
+            - name: BASE_URL
+              valueFrom:
+                configMapKeyRef: { name: chat-endpoint, key: BASE_URL }
             - { name: USERS_FILE, value: "/data/users.json" }
             - { name: PROFILE, value: "load" }
             - { name: TARGET_NAME, value: "mvc" }

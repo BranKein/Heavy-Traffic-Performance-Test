@@ -13,13 +13,18 @@ output "node_private_ips" {
 }
 
 output "ssh_commands" {
-  description = "노드별 SSH 접속 명령"
+  description = "노드별 SSH 접속 명령. sut/deps 는 public IP 가 없어 harness 를 bastion(-J)으로 경유."
   value = {
     # HCP 실행 시엔 private_key_path 가 비어 있으므로 로컬 키 경로 placeholder 로 표시.
     harness = "ssh -i ${local.ssh_key_hint} ubuntu@${aws_instance.harness.public_ip}"
-    sut     = "ssh -i ${local.ssh_key_hint} ubuntu@${aws_instance.sut.public_ip}"
-    deps    = "ssh -i ${local.ssh_key_hint} ubuntu@${aws_instance.deps.public_ip}"
+    sut     = "ssh -i ${local.ssh_key_hint} -J ubuntu@${aws_instance.harness.public_ip} ubuntu@${aws_instance.sut.private_ip}"
+    deps    = "ssh -i ${local.ssh_key_hint} -J ubuntu@${aws_instance.harness.public_ip} ubuntu@${aws_instance.deps.private_ip}"
   }
+}
+
+output "chat_nlb_dns" {
+  description = "k6 가 때리는 chat 엔드포인트(internal NLB DNS). :80 → sut chat NodePort."
+  value       = aws_lb.sut.dns_name
 }
 
 locals {

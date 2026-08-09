@@ -50,7 +50,12 @@ kind: Service
 metadata:
   name: chat-mvc
 spec:
+  # NLB(internal) instance-target → NodePort. externalTrafficPolicy Local 로
+  # NLB 가 pod 있는 노드(sut)로 정확히 전달(6종이 동시에 하나만 떠서 30080 공유 무충돌).
+  type: NodePort
+  externalTrafficPolicy: Local
   selector: { app: chat-mvc }
   ports:
     - port: 8080
       targetPort: 8080
+      nodePort: 30080
