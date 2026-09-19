@@ -1,0 +1,140 @@
+site_name: 대용량 트래픽 채팅 서버 아키텍처 실험
+site_description: 동일한 요구사항을 6가지 서버 아키텍처로 구현하고 동일 조건에서 부하를 걸어 비교한 기록
+site_author: YeonhyukKim
+site_url: https://htpt.yeonhyuk.me/
+copyright: © 2026 YeonhyukKim
+
+repo_url: https://github.com/BranKein/Heavy-Traffic-Performance-Test
+repo_name: Heavy-Traffic-Performance-Test
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: ko
+  # Google Fonts(Roboto) 로딩을 끈다. Roboto 에는 한글 글리프가 없어서 한글만
+  # 다른 폰트로 떨어져 자족이 섞인다. velog 처럼 OS 기본 한글 폰트를 쓰고,
+  # 실제 폰트 스택은 docs/stylesheets/velog.css 에서 지정한다.
+  font: false
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    # 시스템 설정 따라가기
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: 시스템 설정 사용
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom      # 실제 색은 velog.css 의 [data-md-color-primary=custom]
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: 다크 모드로
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: 라이트 모드로
+  features:
+    - navigation.instant       # SPA 방식 페이지 전환
+    - navigation.tracking      # 스크롤에 따라 URL 앵커 갱신
+    - navigation.sections      # 사이드바 최상위를 섹션 헤더로
+    - navigation.top           # 맨 위로 버튼
+    - navigation.footer        # 이전/다음 문서 링크
+    - toc.follow
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+
+markdown_extensions:
+  - abbr
+  - admonition               # !!! note / warning 박스
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details         # 접히는 블록
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      custom_fences:
+        # ```mermaid 코드펜스를 다이어그램으로 렌더링
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search:
+      lang: ko
+
+extra_css:
+  - stylesheets/velog.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/BranKein/Heavy-Traffic-Performance-Test
+
+# ── 목차 ───────────────────────────────────────────────────────────────
+# 페이지를 추가하려면 docs/ 아래에 .md 파일을 만들고 여기 nav 에 한 줄 추가한다.
+nav:
+  - 시작하기:
+      - 이 문서는: index.md
+      - 왜 이 실험을 했나: overview/motivation.md
+      - 요구사항과 제약: overview/requirements.md
+      - 실험 설계 한눈에 보기: overview/experiment-design.md
+
+  - 아키텍처:
+      - 핵심 흐름 — 메시지 전송에서 푸시까지: architecture/message-flow.md
+      - 6가지 서버 구성 비교: architecture/server-variants.md
+      - 동기 블로킹과 리액티브: architecture/blocking-vs-reactive.md
+      - 푸시 팬아웃 전략: architecture/fanout-strategies.md
+      - 데이터 계층과 커넥션 풀: architecture/data-layer.md
+      - 인증과 경계 설계: architecture/auth-and-boundaries.md
+      - 실패를 다루는 방식: architecture/failure-handling.md
+      - 아키텍처 결정 기록: architecture/decisions.md
+
+  - 부하 테스트:
+      - 무엇을 어떻게 측정할 것인가: loadtest/what-to-measure.md
+      - 부하 하네스 설계: loadtest/harness-design.md
+      - 시나리오와 부하 프로파일: loadtest/scenarios.md
+      - 시드 데이터 전략: loadtest/seed-data.md
+      - 컨트롤 패널: loadtest/control-panel.md
+
+  - 인프라:
+      - 로컬 환경 — 단일 머신 구성: infra/local.md
+      - 클라우드로 옮기기 — 3노드 k3s: infra/k3s-cluster.md
+      - 측정 오염을 줄이는 배치: infra/isolation.md
+      - Multi-AZ 와 내부 NLB: infra/multi-az-nlb.md
+      - 이미지 배포와 IaC 파이프라인: infra/delivery-pipeline.md
+      - 관측 스택: infra/observability.md
+      - 비용 관리: infra/cost.md
+
+  - 결과:
+      - 측정 방법과 신뢰 구간: results/methodology.md
+      - 처리량과 지연 비교: results/throughput-latency.md
+      - 자원 사용량 비교: results/resource-usage.md
+      - 병목 해부: results/bottlenecks.md
+      - 결론 — 무엇을 골라야 하나: results/conclusion.md
+
+  - 돌아보며:
+      - 삽질 기록: retrospective/pitfalls.md
+      - 다시 한다면: retrospective/what-id-do-differently.md
+      - 남은 과제: retrospective/open-questions.md

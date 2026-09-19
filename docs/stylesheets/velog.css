@@ -1,0 +1,448 @@
+/* ─────────────────────────────────────────────────────────────────────
+   velog 스타일 오버라이드
+   velog.io 의 실제 디자인 토큰(폰트 스택 / 색 / 타이포 스케일)을 그대로 옮겨
+   Material 테마 변수에 매핑한다.
+
+   ■ 단위 규칙 (중요)
+   Material 은 화면이 넓어질수록 루트 폰트를 키운다
+   (html { font-size: 125% } → 137.5% → 150%). 그래서 넓은 모니터에서는
+   1rem 이 20px 이 아니라 24px 이 되고, rem 으로 적은 값은 같은 화면에서도
+   1.2 배까지 커진다. velog 는 루트가 16px 고정이라 항상 같은 크기다.
+
+   → 본문(.md-typeset)과 사이드바/목차처럼 "velog 와 크기를 맞춰야 하는 것"은
+     **px 로 고정**한다. 화면 폭이 바뀌어도 velog 와 같은 크기가 유지된다.
+   → 헤더 / 푸터 / 검색창 등 테마 UI 는 건드리지 않고 Material 의 rem 스케일을
+     그대로 둔다. (루트를 px 로 고정하면 이쪽이 같이 줄어 8~10px 까지 작아진다)
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── 폰트 ───────────────────────────────────────────────────────────── */
+/* mkdocs.yml 에서 font: false 로 Google Fonts(Roboto) 로딩을 껐다.
+   Roboto 에는 한글 글리프가 없어 한글만 다른 폰트로 떨어지면서 자족이 섞였다.
+   velog 와 동일하게 웹폰트 없이 OS 기본 한글 폰트를 그대로 쓴다
+   (macOS: Apple SD Gothic Neo, Windows: 맑은 고딕). */
+:root {
+  --md-text-font-family:
+    -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Apple SD Gothic Neo",
+    "Malgun Gothic", "맑은 고딕", 나눔고딕, "Nanum Gothic", "Noto Sans KR",
+    "Noto Sans CJK KR", arial, 돋움, Dotum, Tahoma, Geneva, sans-serif;
+  --md-code-font-family:
+    "Fira Mono", source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* ── 색 (라이트) ────────────────────────────────────────────────────── */
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #ffffff;
+  --md-default-fg-color: #212529;
+  --md-default-fg-color--light: #495057;
+  --md-default-fg-color--lighter: #868e96;
+  --md-default-fg-color--lightest: #ced4da;
+
+  --md-typeset-color: #212529;
+  --md-typeset-a-color: #12b886;
+
+  --md-code-bg-color: #fbfcfd;
+  --md-code-fg-color: #24292e;
+
+  /* velog 고유 토큰 */
+  --velog-border: #dee2e6;
+  --velog-border-subtle: #f1f3f5;
+  --velog-inline-code-bg: #e9ecef;
+  --velog-quote-bg: #f8f9fa;
+  --velog-primary: #12b886;
+  --velog-primary-soft: #20c997;
+}
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: #12b886;
+  --md-primary-fg-color--light: #20c997;
+  --md-primary-fg-color--dark: #0ca678;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #0ca678;
+  --md-accent-fg-color--transparent: rgba(18, 184, 134, 0.1);
+  --md-accent-bg-color: #ffffff;
+}
+
+/* ── 색 (다크) ──────────────────────────────────────────────────────── */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #121212;
+  --md-default-fg-color: #ececec;
+  --md-default-fg-color--light: #d9d9d9;
+  --md-default-fg-color--lighter: #acacac;
+  --md-default-fg-color--lightest: #595959;
+
+  --md-typeset-color: #ececec;
+  --md-typeset-a-color: #96f2d7;
+
+  --md-code-bg-color: #1e1e1e;
+  --md-code-fg-color: #e0e6f1;
+
+  --velog-border: #4d4d4d;
+  --velog-border-subtle: #2a2a2a;
+  --velog-inline-code-bg: #363636;
+  --velog-quote-bg: #1e1e1e;
+  --velog-primary: #96f2d7;
+  --velog-primary-soft: #63e6be;
+}
+
+[data-md-color-scheme="slate"][data-md-color-primary="custom"] {
+  --md-primary-fg-color: #121212;
+  --md-primary-bg-color: #ececec;
+}
+
+[data-md-color-scheme="slate"][data-md-color-accent="custom"] {
+  --md-accent-fg-color: #63e6be;
+  --md-accent-fg-color--transparent: rgba(150, 242, 215, 0.1);
+}
+
+/* ── 본문 타이포그래피 ──────────────────────────────────────────────── */
+/* velog: 18px / 1.7 / letter-spacing -0.004em.
+   word-break: keep-all 은 한글 단어가 음절 단위로 끊기는 걸 막는다(가독성 핵심). */
+.md-typeset {
+  font-size: 18px;
+  line-height: 1.7;
+  letter-spacing: -0.004em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.md-typeset p {
+  margin: 1em 0;
+}
+
+/* ── 제목 ───────────────────────────────────────────────────────────── */
+/* Material 기본 h1 은 font-weight 300 에 흐린 색이라 힘이 없다.
+   velog 처럼 굵고 본문과 같은 진한 색으로. */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  color: var(--md-default-fg-color);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h1 {
+  font-size: 40px;
+  font-weight: 800;
+  margin-top: 0;
+}
+
+.md-typeset h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 40px;
+}
+
+.md-typeset h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 36px;
+}
+
+.md-typeset h4 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 30px;
+}
+
+/* velog: 문단 바로 뒤에 오는 제목은 위 여백을 더 크게 */
+.md-typeset p + h1,
+.md-typeset p + h2,
+.md-typeset p + h3,
+.md-typeset p + h4 {
+  margin-top: 40px;
+}
+
+/* 제목 옆 앵커(#)는 hover 시에만 */
+.md-typeset .headerlink {
+  color: var(--md-default-fg-color--lightest);
+}
+
+/* ── 링크 ───────────────────────────────────────────────────────────── */
+/* velog: 밑줄 없이 초록, hover 시 밑줄 */
+.md-typeset a {
+  text-decoration: none;
+}
+
+.md-typeset a:hover {
+  color: var(--md-typeset-a-color);
+  text-decoration: underline;
+}
+
+/* ── 코드 ───────────────────────────────────────────────────────────── */
+/* 인라인 코드: velog 는 85% 크기에 회색 배경, 글자색은 본문색 유지 */
+.md-typeset code {
+  background-color: var(--velog-inline-code-bg);
+  color: var(--md-default-fg-color);
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  border-radius: 3px;
+  word-break: break-all;
+}
+
+/* 코드 블록: velog 14px / 1.5 */
+.md-typeset pre > code {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 16px;
+  background-color: var(--md-code-bg-color);
+  border-radius: 4px;
+}
+
+.md-typeset .highlight,
+.md-typeset pre {
+  border-radius: 4px;
+}
+
+[data-md-color-scheme="default"] .md-typeset pre > code {
+  border: 1px solid var(--velog-border-subtle);
+}
+
+/* ── 인용구 ─────────────────────────────────────────────────────────── */
+/* velog: 왼쪽 초록 4px + 연한 배경 + 오른쪽 모서리만 둥글게 */
+.md-typeset blockquote {
+  margin: 32px 0;
+  padding: 16px 16px 16px 32px;
+  border-left: 4px solid var(--velog-primary-soft);
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  background: var(--velog-quote-bg);
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset blockquote > :first-child {
+  margin-top: 0;
+}
+
+.md-typeset blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* ── 구분선 · 이미지 ────────────────────────────────────────────────── */
+.md-typeset hr {
+  border: none;
+  height: 1px;
+  background: var(--velog-border);
+  margin: 32px 0;
+}
+
+.md-typeset img {
+  display: block;
+  margin: 48px auto;
+  max-width: 100%;
+}
+
+/* ── 목록 · 표 ──────────────────────────────────────────────────────── */
+.md-typeset ul li,
+.md-typeset ol li {
+  margin-bottom: 0.4em;
+}
+
+.md-typeset table:not([class]) {
+  font-size: 16px;
+  border: 1px solid var(--velog-border);
+  border-radius: 4px;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--velog-quote-bg);
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset table:not([class]) td {
+  border-top: 1px solid var(--velog-border-subtle);
+}
+
+/* ── 헤더 ───────────────────────────────────────────────────────────── */
+/* velog 헤더는 컬러 바가 아니라 흰 배경 + 얇은 아래 테두리.
+   글자 크기는 Material 기본(rem)을 그대로 둔다 — 색만 바꾼다. */
+.md-header {
+  background-color: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  box-shadow: none;
+  border-bottom: 1px solid var(--velog-border-subtle);
+}
+
+.md-header--shadow {
+  box-shadow: none;
+}
+
+.md-header__title {
+  font-weight: 700;
+}
+
+/* 흰 헤더 위에서는 검색창이 배경과 구분되도록 */
+.md-search__form {
+  background-color: var(--velog-inline-code-bg);
+  border-radius: 4px;
+}
+
+.md-search__form:hover {
+  background-color: var(--velog-inline-code-bg);
+}
+
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color--lighter);
+}
+
+/* ── 푸터 (이전/다음 문서) ──────────────────────────────────────────── */
+/* 문서 제목이 Material 기본값(0.9rem)이라 넓은 화면에서 루트가 24px 이 되면
+   21.6px 까지 커진다. 본문과 같은 18px 로 고정한다.
+   위에 붙는 '이전/다음' 라벨은 Material 기본 크기 그대로 둔다. */
+.md-footer__title .md-ellipsis {
+  font-size: 18px;
+}
+
+/* ── 사이드바 (왼쪽 목차) ───────────────────────────────────────────── */
+.md-nav {
+  font-size: 14px;
+}
+
+.md-nav__title {
+  color: var(--md-default-fg-color--lighter);
+  font-weight: 700;
+}
+
+/* 현재 보고 있는 문서를 초록 볼드로 */
+.md-nav__link--active,
+.md-nav__link--active code {
+  color: var(--velog-primary);
+  font-weight: 700;
+}
+
+.md-nav__link:hover {
+  color: var(--velog-primary);
+}
+
+/* ── 오른쪽 인덱스 (velog 스타일 목차) ──────────────────────────────── */
+/* velog 는 본문 오른쪽에 세로선 하나를 긋고, 지금 읽는 위치의 항목만
+   초록 볼드 + 왼쪽 선을 초록으로 바꿔 표시한다. 그걸 그대로 옮긴다.
+   스크롤 추종은 mkdocs.yml 의 toc.follow 가 처리한다. */
+.md-sidebar--secondary {
+  font-size: 14px;
+}
+
+.md-nav--secondary .md-nav__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--md-default-fg-color--lighter);
+  box-shadow: none;
+  background: transparent;
+  padding-bottom: 8px;
+}
+
+/* 최상위 목록에만 세로선 (중첩 목록에 또 그리면 선이 여러 줄 생긴다) */
+.md-nav--secondary > .md-nav__list {
+  border-left: 1px solid var(--velog-border);
+  padding-left: 0;
+}
+
+.md-nav--secondary .md-nav__item {
+  padding-right: 0;
+}
+
+.md-nav--secondary .md-nav__link {
+  margin-left: -1px;                       /* 세로선 위에 겹쳐 그린다 */
+  padding-left: 12px;
+  border-left: 2px solid transparent;
+  color: var(--md-default-fg-color--lighter);
+  line-height: 1.5;
+  transition:
+    color 0.1s,
+    border-color 0.1s;
+}
+
+/* 깊이별 들여쓰기 (h2 → h3 → h4) */
+.md-nav--secondary .md-nav .md-nav__link {
+  padding-left: 24px;
+}
+
+.md-nav--secondary .md-nav .md-nav .md-nav__link {
+  padding-left: 36px;
+}
+
+.md-nav--secondary .md-nav__link:hover {
+  color: var(--velog-primary);
+}
+
+/* 지금 읽고 있는 위치 */
+.md-nav--secondary .md-nav__link--active {
+  color: var(--velog-primary);
+  font-weight: 700;
+  border-left-color: var(--velog-primary);
+}
+
+/* ── 레이아웃 폭 ────────────────────────────────────────────────────── */
+/* 폭도 px 로 고정한다. rem 으로 두면 넓은 화면에서 루트가 24px 이 되면서
+   본문이 velog(768px)보다 훨씬 넓어져, 같은 18px 이어도 글이 커 보인다. */
+.md-grid {
+  max-width: 1264px;     /* 본문 768px + 좌우 사이드바 224px×2 + 본문 좌우 여백 */
+}
+
+/* 사이드바 폭도 고정 — 안 그러면 넓은 화면에서 사이드바가 불어나
+   본문이 768px 를 못 채운다 */
+.md-sidebar {
+  width: 224px;
+}
+
+.md-content__inner {
+  max-width: 768px;      /* velog 본문 폭 */
+  margin-bottom: 48px;
+}
+
+/* 본문 상단의 빈 여백 제거(Material 기본값이 과함) */
+.md-content__inner::before {
+  height: 8px;
+}
+
+/* ── admonition (!!! note) ──────────────────────────────────────────── */
+/* Material 기본은 그림자가 있어 무겁다. velog 인용구처럼 납작하게 */
+.md-typeset .admonition,
+.md-typeset details {
+  font-size: 16px;
+  border: none;
+  border-left: 4px solid;
+  border-radius: 4px;
+  box-shadow: none;
+  background: var(--velog-quote-bg);
+}
+
+/* ── 모바일 ─────────────────────────────────────────────────────────── */
+/* velog 는 1024px 이하에서 본문 16px, 제목도 한 단계씩 축소 */
+@media screen and (max-width: 1024px) {
+  .md-typeset {
+    font-size: 16px;
+  }
+
+  .md-typeset h1 {
+    font-size: 36px;
+  }
+
+  .md-typeset h2 {
+    font-size: 28px;
+  }
+
+  .md-typeset h3 {
+    font-size: 20px;
+  }
+
+  .md-typeset h4 {
+    font-size: 16px;
+  }
+}
+
+/* 사이드바가 서랍(drawer)으로 바뀌는 구간에서는 폭 고정을 풀어야 한다 */
+@media screen and (max-width: 76.1875em) {
+  .md-sidebar {
+    width: auto;
+  }
+}

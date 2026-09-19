@@ -26,3 +26,7 @@ fabric.properties
 .idea
 
 .claude
+
+# mkdocs 문서 사이트
+site/
+.venv-docs/
